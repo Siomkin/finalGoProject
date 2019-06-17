@@ -10,7 +10,18 @@ import (
 
 //TODO create interface and struct
 
-func GetGroupByName(ctx context.Context, groupName string) (*domain.Group, error) {
+type GroupRepository interface {
+	GetGroupByName(ctx context.Context, groupName string) (*domain.Group, error)
+	AddGroup(ctx context.Context, groupName string) error
+}
+
+type groupRepository struct {}
+
+func NewGroupRepository() GroupRepository{
+	return &groupRepository{}
+}
+
+func (gr *groupRepository) GetGroupByName(ctx context.Context, groupName string) (*domain.Group, error) {
 	database, err := InitDb(ctx)
 	if err != nil {
 		return nil, err
@@ -31,7 +42,7 @@ func GetGroupByName(ctx context.Context, groupName string) (*domain.Group, error
 	return &result, nil
 }
 
-func AddGroup(ctx context.Context, groupName string) error{
+func (gr *groupRepository) AddGroup(ctx context.Context, groupName string) error{
 	database, err := InitDb(ctx)
 	if err != nil {
 		return err
@@ -41,7 +52,7 @@ func AddGroup(ctx context.Context, groupName string) error{
 
 	var result *domain.Group
 
-	result, err = GetGroupByName(ctx, groupName)
+	result, err = gr.GetGroupByName(ctx, groupName)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -59,4 +70,5 @@ func AddGroup(ctx context.Context, groupName string) error{
 		fmt.Println(insertResult)
 
 	}
+	return nil
 }
