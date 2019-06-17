@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"log"
 	"main/domain"
 )
 
 type TabelRepository interface {
 	GetChildTabel(ctx context.Context, childID primitive.ObjectID, dateFrom int64, dateTo int64) ([]*domain.TabelRecord, error)
-	getTabelWithPrices(ctx context.Context, childID primitive.ObjectID, dateFrom int64, dateTo int64)
+	//getTabelWithPrices(ctx context.Context, childID primitive.ObjectID, dateFrom int64, dateTo int64)
 	AddDay(ctx context.Context, date int64, childID primitive.ObjectID, status bool) (primitive.ObjectID, error)
 }
 
@@ -46,7 +45,8 @@ func (tr *tabelRepository) GetChildTabel(ctx context.Context, childID primitive.
 		var elem domain.TabelRecord
 		err := tabelRecords.Decode(&elem)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
+			return nil, err
 		}
 		TabelRecords = append(TabelRecords, &elem)
 	}
@@ -72,10 +72,10 @@ func (tr *tabelRepository) GetChildTabel(ctx context.Context, childID primitive.
 //rows = self.cur.fetchall()
 //return rows
 
-func (tr *tabelRepository) getTabelWithPrices(ctx context.Context, childID primitive.ObjectID, dateFrom int64, dateTo int64){
-
-
-}
+//func (tr *tabelRepository) getTabelWithPrices(ctx context.Context, childID primitive.ObjectID, dateFrom int64, dateTo int64){
+//
+//
+//}
 
 //Python
 //def add_day(self, date, child_id, status):

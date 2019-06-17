@@ -8,8 +8,6 @@ import (
 	"main/domain"
 )
 
-//TODO create interface and struct
-
 
 type ChildrenRepository interface{
 	GetChildrenById(ctx context.Context, childID primitive.ObjectID) (*domain.Children, error)
@@ -53,8 +51,37 @@ func (cr *childrenRepository) GetChildrenById(ctx context.Context, childID primi
 
 
 func (cr *childrenRepository) GetChildrenByUserID(ctx context.Context, userID primitive.ObjectID) ([] *domain.Children, error) {
+	database, err := InitDb(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	collection := database.Collection(ChildrenCollectionName)
+
+	var children [] *domain.Children
+	filter := bson.D{{"userid", userID}}
+
+	result, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	for result.Next(ctx) {
+		var elem domain.Children
+		err := result.Decode(&elem)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+		children = append(children, &elem)
+	}
+
+	err = database.Client().Disconnect(ctx)
+	if err != nil {
+		fmt.Println(err)
+		return children, err
+	}
+	return children, nil
 }
 
 
@@ -62,8 +89,33 @@ func (cr *childrenRepository) GetChildrenByUserID(ctx context.Context, userID pr
 //self.cur.execute(r"INSERT INTO mydb.children VALUES (NUll, %s, %s, %s)", (child_name, group_id,  user_id,))
 //self.conn.commit()
 func (cr *childrenRepository) AddChild(ctx context.Context, userID primitive.ObjectID, groupID primitive.ObjectID, childName string) (primitive.ObjectID, error){
+	var emptyVal primitive.ObjectID
+	database, err := InitDb(ctx)
+	if err != nil {
+		return emptyVal, err
+	}
 
-	return nil
+	collection := database.Collection(ChildrenCollectionName)
+
+	child := domain.NewChildren()
+	child.ID = primitive.NewObjectID()
+	child.UserID = userID
+	child.GroupID = groupID
+	child.Name = childName
+
+	insertResult, err := collection.InsertOne(ctx, child)
+	if err != nil {
+		return emptyVal, err
+	}
+
+	fmt.Println("Inserted a single document: ", insertResult.InsertedID)
+
+	err = database.Client().Disconnect(ctx)
+	if err != nil {
+		return emptyVal, err
+	}
+
+	return insertResult.InsertedID.(primitive.ObjectID), nil
 }
 
 //def delete_child(self, name, userid):

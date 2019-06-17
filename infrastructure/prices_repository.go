@@ -8,10 +8,19 @@ import (
 	"main/domain"
 )
 
-//TODO create interface and struct
+type PricesRepository interface {
+	GetPrice(ctx context.Context, date int64, groupId primitive.ObjectID) (*domain.Prices, error)
+	AddPrice(ctx context.Context, date int64, groupId primitive.ObjectID, price float64)
+	ChangePrice(ctx context.Context, date int64, groupId primitive.ObjectID, price float64)
+}
 
+type pricesRepository struct{}
 
-func GetPrice(ctx context.Context, date int64, groupId primitive.ObjectID) (*domain.Prices, error) {
+func NewPricesRepository() PricesRepository{
+	return &pricesRepository{}
+}
+
+func (pr * pricesRepository) GetPrice(ctx context.Context, date int64, groupId primitive.ObjectID) (*domain.Prices, error) {
 
 	database, err := InitDb(ctx)
 	if err != nil {
@@ -36,7 +45,7 @@ func GetPrice(ctx context.Context, date int64, groupId primitive.ObjectID) (*dom
 }
 
 //adds or changing price on the date and group
-func AddPrice(ctx context.Context, date int64, groupId primitive.ObjectID, price float64) {
+func (pr * pricesRepository) AddPrice(ctx context.Context, date int64, groupId primitive.ObjectID, price float64) {
 
 	database, err := InitDb(ctx)
 	if err != nil {
@@ -45,7 +54,7 @@ func AddPrice(ctx context.Context, date int64, groupId primitive.ObjectID, price
 
 	collection := database.Collection(PricesCollectionName)
 
-	result, err := GetPrice(ctx, date, groupId)
+	result, err := pr.GetPrice(ctx, date, groupId)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -87,7 +96,7 @@ func AddPrice(ctx context.Context, date int64, groupId primitive.ObjectID, price
 	}
 }
 
-func ChangePrice(ctx context.Context, date int64, groupId primitive.ObjectID, price float64){
+func (pr * pricesRepository) ChangePrice(ctx context.Context, date int64, groupId primitive.ObjectID, price float64){
 	database, err := InitDb(ctx)
 	if err != nil {
 		return // nil, err
@@ -95,7 +104,7 @@ func ChangePrice(ctx context.Context, date int64, groupId primitive.ObjectID, pr
 
 	collection := database.Collection(PricesCollectionName)
 
-	result, err := GetPrice(ctx, date, groupId)
+	result, err := pr.GetPrice(ctx, date, groupId)
 	if err != nil {
 		fmt.Println(err)
 	}
