@@ -17,9 +17,9 @@ func main() {
 	pass := "123"
 	groupName := "2я младшая Б"
 
-	infrastructure.AddGroup(ctx, groupName)
+	err := infrastructure.NewGroupRepository().AddGroup(ctx, groupName)
 
-	group, err := infrastructure.GetGroupByName(ctx, groupName)
+	group, err := infrastructure.NewGroupRepository().GetGroupByName(ctx, groupName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,7 +28,7 @@ func main() {
 	//infrastructure.AddPrice(ctx, time.Date(2019,06,01, 1,0,0,0, time.Local).Unix(), group.ID, 2.4)
 	//infrastructure.AddPrice(ctx, time.Date(2019,06,10, 1,0,0,0, time.Local).Unix(), group.ID, 2.6)
 
-	infrastructure.ChangePrice(ctx, time.Date(2019,06,10, 1,0,0,0, time.Local).Unix(), group.ID, 2.7)
+	infrastructure.NewPricesRepository().ChangePrice(ctx, time.Date(2019,06,10, 1,0,0,0, time.Local).Unix(), group.ID, 2.7)
 	//date := time.Date(2019,06,10, 1,0,0,0, time.Local).Unix()
 	//pr, err := infrastructure.GetPrice(ctx, date, group.ID)
 	//fmt.Println(pr)

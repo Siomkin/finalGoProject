@@ -30,7 +30,8 @@ func (pr * pricesRepository) GetPrice(ctx context.Context, date int64, groupId p
 	collection := database.Collection(PricesCollectionName)
 
 	var result domain.Prices
-	filter := bson.D{{"date", date}, {"groupid", groupId}}
+	filter := bson.D{{"date", bson.D{{"$lte", date}}},
+							{"groupid", groupId}}
 	err = collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
 		return nil, err
