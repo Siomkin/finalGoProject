@@ -19,7 +19,7 @@ type SchoolRepository interface{
 
 type schoolRepository struct {}
 
-func NewschoolRepository() SchoolRepository {
+func NewSchoolRepository() SchoolRepository {
 	return &schoolRepository{}
 }
 

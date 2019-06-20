@@ -1,34 +1,35 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"log"
+	"main/server"
+	"main/server/handlers"
+
+	//"log"
 	"main/infrastructure"
-	"time"
+	//"time"
 )
 
 
 func main() {
 
-	ctx := context.Background()
+	//ctx := context.Background()
 
-	login := "ldo"
-	pass := "123"
-	groupName := "2я младшая Б"
-
-	err := infrastructure.NewGroupRepository().AddGroup(ctx, groupName)
-
-	group, err := infrastructure.NewGroupRepository().GetGroupByName(ctx, groupName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(group)
+	//login := "ldo"
+	//pass := "123"
+	//groupName := "2я младшая Б"
+	//
+	//err := infrastructure.NewGroupRepository().AddGroup(ctx, groupName)
+	//
+	//group, err := infrastructure.NewGroupRepository().GetGroupByName(ctx, groupName)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//fmt.Println(group)
 
 	//infrastructure.AddPrice(ctx, time.Date(2019,06,01, 1,0,0,0, time.Local).Unix(), group.ID, 2.4)
 	//infrastructure.AddPrice(ctx, time.Date(2019,06,10, 1,0,0,0, time.Local).Unix(), group.ID, 2.6)
 
-	infrastructure.NewPricesRepository().ChangePrice(ctx, time.Date(2019,06,10, 1,0,0,0, time.Local).Unix(), group.ID, 2.7)
+	//infrastructure.NewPricesRepository().ChangePrice(ctx, time.Date(2019,06,10, 1,0,0,0, time.Local).Unix(), group.ID, 2.7)
 	//date := time.Date(2019,06,10, 1,0,0,0, time.Local).Unix()
 	//pr, err := infrastructure.GetPrice(ctx, date, group.ID)
 	//fmt.Println(pr)
@@ -44,9 +45,22 @@ func main() {
 	//	return
 	//}
 
-
-	res := infrastructure.UserLogin(ctx, login, pass)
-	fmt.Println(res)
-
+	//res := infrastructure.UserLogin(ctx, login, pass)
+	//fmt.Println(res)
 	//fmt.Println("Created user with id:", user)
+
+
+	usersRepository := infrastructure.NewUsersRepository()
+	//
+	//authGuard := core.NewAuthGuard(usersRepository)
+	//
+	//authMiddleware := middleware.NewAuthMiddleware(authGuard)
+	//
+	usersHandler := handlers.NewUsersHandler(usersRepository)
+	//adminsHandler := handlers.NewAdminsHandler(usersRepository)
+
+	//server := server.NewServer(":8080", usersHandler, adminsHandler, authMiddleware)
+	server := server.NewServer(":8080", usersHandler) //, adminsHandler, authMiddleware)
+	server.ConfigureAndRun()
+
 }

@@ -15,7 +15,7 @@ type TabelRepository interface {
 }
 
 type tabelRepository struct{}
-func NewtabelRepository() TabelRepository {
+func NewTabelRepository() TabelRepository {
 	return &tabelRepository{}
 }
 
@@ -41,8 +41,8 @@ func (tr *tabelRepository) GetChildTabel(ctx context.Context, childID primitive.
 
 	var TabelRecords []*domain.TabelRecord
 
+	var elem domain.TabelRecord
 	for tabelRecords.Next(ctx) {
-		var elem domain.TabelRecord
 		err := tabelRecords.Decode(&elem)
 		if err != nil {
 			fmt.Println(err)

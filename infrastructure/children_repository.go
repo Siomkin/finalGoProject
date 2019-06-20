@@ -18,7 +18,7 @@ type ChildrenRepository interface{
 
 type childrenRepository struct{}
 
-func NewchildrenRepository() ChildrenRepository{
+func NewChildrenRepository() ChildrenRepository{
 	return &childrenRepository{}
 }
 

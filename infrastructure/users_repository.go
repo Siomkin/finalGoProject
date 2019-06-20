@@ -10,16 +10,26 @@ import (
 	"main/domain"
 )
 
-//TODO create interface and struct
-
 //func GetUserByID(id string) *domain.User{
 //
 //
 //}
 //
 
-func UserLogin(ctx context.Context, login string, pass string) bool{
-	us, err := GetUserByLogin(ctx, login)
+type UsersRepository interface{
+	UserLogin(ctx context.Context, login string, pass string) bool
+	GetUserByLogin(ctx context.Context, login string) (*domain.User, error)
+	CreateUser(ctx context.Context, login string, pass string) (*domain.User, error)
+}
+
+type usersRepository struct{}
+
+func NewUsersRepository() UsersRepository{
+	return &usersRepository{}
+}
+
+func (u *usersRepository) UserLogin(ctx context.Context, login string, pass string) bool{
+	us, err := u.GetUserByLogin(ctx, login)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,7 +45,7 @@ func UserLogin(ctx context.Context, login string, pass string) bool{
 	return false
 }
 
-func GetUserByLogin(ctx context.Context, login string) (*domain.User, error){
+func (u *usersRepository) GetUserByLogin(ctx context.Context, login string) (*domain.User, error){
 	var result domain.User
 
 	database, err := InitDb(ctx)
@@ -60,7 +70,7 @@ func GetUserByLogin(ctx context.Context, login string) (*domain.User, error){
 	return &result, nil
 }
 
-func CreateUser(ctx context.Context, login string, pass string) (*domain.User, error){
+func (u *usersRepository) CreateUser(ctx context.Context, login string, pass string) (*domain.User, error){
 
 	database, err := InitDb(ctx)
 	if err != nil {
