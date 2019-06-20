@@ -31,7 +31,8 @@ func (server *Server) ConfigureAndRun() {
 	//adminHandler = server.authMiddleware.CheckAuth(adminHandler)
 
 	userMux := http.NewServeMux()
-	userMux.HandleFunc("/user/profile", server.handlers.GetUser)
+	//userMux.HandleFunc("/", server.handlers.GetUser)
+	userMux.HandleFunc("/{name}", server.handlers.GetUser)
 
 	//userHandler := server.authMiddleware.CheckAuth(userMux)
 
@@ -39,7 +40,22 @@ func (server *Server) ConfigureAndRun() {
 	siteMux.Handle("/admin/", adminMux); //adminHandler)
 	siteMux.Handle("/user/", userMux); //userHandler)
 	siteMux.HandleFunc("/register", server.handlers.AddUser)
+	siteMux.HandleFunc("/login", server.handlers.Login)
 
 	fmt.Printf("listening at %s", server.port)
 	http.ListenAndServe(server.port, siteMux)
 }
+// login
+// register
+// admin/
+//		 users		  get
+//		 schools	  get, post
+//		 groups		  get, post
+//		 groups/{id}  get
+//		 price		  get, post
+//
+// user/{name}			get
+//		 users			get
+//		 tabel			get, post
+//		 children		get, post
+//		 children/name	get
