@@ -63,7 +63,7 @@ func (sr *schoolRepository) GetSchools(ctx context.Context) ([]*domain.School, e
 		fmt.Println(err)
 		return schools, err
 	}
-	return nil, nil
+	return schools, nil
 }
 
 func (sr *schoolRepository) GetSchoolByID(ctx context.Context, id primitive.ObjectID) (*domain.School, error){

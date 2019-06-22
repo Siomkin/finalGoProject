@@ -60,7 +60,7 @@ func main() {
 	//adminsHandler := handlers.NewAdminsHandler(usersRepository)
 
 	//server := server.NewServer(":8080", usersHandler, adminsHandler, authMiddleware)
-	server := server.NewServer(":8080", usersHandler) //, adminsHandler, authMiddleware)
-	server.ConfigureAndRun()
+	srv := server.NewServer(":8080", usersHandler) //, adminsHandler, authMiddleware)
+	srv.ConfigureAndRun()
 
 }

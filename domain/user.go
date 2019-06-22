@@ -7,7 +7,7 @@ import (
 type User struct{
 	ID primitive.ObjectID `bson:"_id,omitempty"`
 	Name string
-	Pass string
+	Pass string `json:"-"`
 	Role string
 	FName string
 	LName string
