@@ -72,12 +72,20 @@ func (h *usersHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 	// Fake auth check
 	loggedIn := (err != http.ErrNoCookie)
 
-	if loggedIn {
-		fmt.Fprintln(w, `<a href="/logout">logout</a>`)
-		fmt.Fprintln(w, "Welcome, " + session.Value)
-	} else {
-		fmt.Fprintln(w, `<a href="/login">login</a>`)
-		fmt.Fprintln(w, "You need to login")
+	user, err := h.usersRepository.GetUserByID(context.Background(), session.Value)
+	if err != nil{
+		fmt.Println(err)
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	}
+
+	if user != nil {
+		if loggedIn {
+			fmt.Fprintln(w, `<a href="/logout">logout</a>`)
+			fmt.Fprintln(w, "Welcome, " + user.Name)
+		} else {
+			fmt.Fprintln(w, `<a href="/login">login</a>`)
+			fmt.Fprintln(w, "You need to login")
+		}
 	}
 }
 
@@ -151,8 +159,6 @@ func (h *usersHandler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *usersHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	path := strings.Split(string(r.RequestURI), "/")
-
-
 
 	if r.Method == http.MethodGet {
 		if len(path) == 2 {                       //two params - address like /user/{name}

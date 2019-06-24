@@ -38,6 +38,8 @@ func (server *Server) ConfigureAndRun() {
 	//userMux.HandleFunc("/", server.handlers.GetUser)
 	userMux.HandleFunc("/user/", server.handlers.GetUser)
 	//userMux.HandleFunc("/user/{name}/{child}/", server.handlers.GetUserChild)
+	userMux.HandleFunc("/user/children/", server.handlers.GetUserChild)
+
 
 	//userHandler := server.authMiddleware.CheckAuth(userMux)
 

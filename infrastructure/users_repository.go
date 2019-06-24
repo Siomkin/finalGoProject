@@ -23,9 +23,11 @@ type UsersRepository interface{
 	GetUserByLogin(ctx context.Context, login string) (*domain.User, error)
 	CreateUser(ctx context.Context, login string, pass string) (*domain.User, error)
 	GetUserList(ctx context.Context) ([]*domain.User, error)
+	GetUserByID(ctx context.Context, ID string) (*domain.User, error)
 }
 
 type usersRepository struct{}
+
 
 func NewUsersRepository() UsersRepository{
 	return &usersRepository{}
@@ -139,4 +141,30 @@ func (u *usersRepository) CreateUser(ctx context.Context, login string, pass str
 	}
 
 	return userForInsert, nil
+}
+
+
+func (u *usersRepository) GetUserByID(ctx context.Context, ID string) (*domain.User, error) {
+	var result domain.User
+
+	database, err := InitDb(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	collection := database.Collection(UsersCollectionName)
+	filter := bson.D{{"_id", primitive.ObjectIDFromHex(ID)}}
+
+	err = collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	err = database.Client().Disconnect(ctx)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("Connection to MongoDB closed.")
+
+	return &result, nil
 }
