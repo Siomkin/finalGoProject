@@ -12,7 +12,7 @@ import (
 type SchoolRepository interface{
 
 	GetSchools(ctx context.Context) ([] *domain.School, error)
-	AddSchool(ctx context.Context, name string) primitive.ObjectID
+	AddSchool(ctx context.Context, name string)(primitive.ObjectID, error)
 	GetSchoolByID(ctx context.Context, id primitive.ObjectID) (*domain.School, error)
 	GetSchoolByName(ctx context.Context, name string) (*domain.School, error)
 }
@@ -92,14 +92,14 @@ func (sr *schoolRepository) GetSchoolByID(ctx context.Context, id primitive.Obje
 	return &school, nil
 }
 
-func (sr *schoolRepository) AddSchool(ctx context.Context, name string) primitive.ObjectID{
+func (sr *schoolRepository) AddSchool(ctx context.Context, name string) (*domain.School, error){
 
-	var emptyVal primitive.ObjectID
+	//var emptyVal primitive.ObjectID
 	school, err := sr.GetSchoolByName(ctx, name)
 
 	if err != nil {
 		fmt.Println(err)
-		return emptyVal
+		return nil, err
 	}
 
 	if school == nil {
@@ -107,23 +107,24 @@ func (sr *schoolRepository) AddSchool(ctx context.Context, name string) primitiv
 		database, err := InitDb(ctx)
 		if err != nil {
 			fmt.Println(err)
-			return emptyVal
+			return nil, err
 		}
 
 		collection := database.Collection(SchoolsCollectionName)
 
-		tabelRecord := domain.NewSchool()
-		tabelRecord.ID = primitive.NewObjectID()
-		tabelRecord.Name = name
+		newschool := domain.NewSchool()
+		newschool.ID = primitive.NewObjectID()
+		newschool.Name = name
 
-		result, err := collection.InsertOne(ctx, tabelRecord)
+		res, err := collection.InsertOne(ctx, newschool)
 		if err != nil {
 			fmt.Println(err)
-			return emptyVal
+			return nil, err
 		}
-		return result.InsertedID.(primitive.ObjectID)
+		fmt.Println(res)
+		return newschool, nil
 	}
-	return emptyVal
+	return nil, err
 }
 
 func (sr *schoolRepository) GetSchoolByName(ctx context.Context, name string) (*domain.School, error){

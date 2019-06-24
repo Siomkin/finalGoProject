@@ -29,12 +29,17 @@ type UsersHandler interface {
 //Struct
 type usersHandler struct {
 	usersRepository infrastructure.UsersRepository
+	schoolsRepository infrastructure.SchoolRepository
+	groupsRepository infrastructure.GroupRepository
 }
 
 //Constructor
-func NewUsersHandler(usersRepository infrastructure.UsersRepository) UsersHandler {
+func NewUsersHandler(usersRepository infrastructure.UsersRepository, schoolsRepository infrastructure.SchoolRepository,
+	groupsRepository infrastructure.GroupRepository) UsersHandler {
 	return &usersHandler{
 		usersRepository: usersRepository,
+		schoolsRepository: schoolsRepository,
+		groupsRepository: groupsRepository,
 	}
 }
 
@@ -188,11 +193,95 @@ func (h *usersHandler) GetUserChild(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *usersHandler) Schools(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "GetUsersList worked")
+	if r.Method == http.MethodGet {
+		schools, err := h.schoolsRepository.GetSchools(context.Background())
+		if err != nil {
+			http.Redirect(w, r, "/", 301)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		res, err := json.Marshal(schools)
+		if err != nil {
+			fmt.Println(err)
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+		}
+		fmt.Fprint(w, string(res))
+	} else if r.Method == http.MethodPost {
+
+		decoder := json.NewDecoder(r.Body)
+		var reg domain.School
+		err := decoder.Decode(&reg)
+		if err != nil{
+			fmt.Println(err)
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+		}
+
+		newSchool, err := h.schoolsRepository.AddSchool(context.Background(), reg.Name)
+		if err != nil {
+			fmt.Println(err)
+			http.Redirect(w, r, "/register", http.StatusMovedPermanently)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		res, err := json.Marshal(newSchool)
+		if err != nil{
+			fmt.Println(err)
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+		}
+		fmt.Fprint(w, string(res))
+
+	} else{
+		http.Redirect(w, r, "/", http.StatusMethodNotAllowed)
+	}
+
 }
 
 func (h *usersHandler) Groups(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "GetUsersList worked")
+	if r.Method == http.MethodGet {
+		groups, err := h.groupsRepository.GetGroups(context.Background())
+		if err != nil {
+			http.Redirect(w, r, "/", 301)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		res, err := json.Marshal(groups)
+		if err != nil {
+			fmt.Println(err)
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+		}
+		fmt.Fprint(w, string(res))
+
+	} else if r.Method == http.MethodPost {
+
+		decoder := json.NewDecoder(r.Body)
+		var reg domain.CreateGroupData
+		err := decoder.Decode(&reg)
+		if err != nil{
+			fmt.Println(err)
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+		}
+
+		gr, err := h.groupsRepository.AddGroup(context.Background(), reg.Name, reg.SchoolID)
+		if err != nil {
+			fmt.Println(err)
+			http.Redirect(w, r, "/register", http.StatusMovedPermanently)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		res, err := json.Marshal(gr)
+		if err != nil{
+			fmt.Println(err)
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+		}
+		fmt.Fprint(w, string(res))
+
+	} else{
+		http.Redirect(w, r, "/", http.StatusMethodNotAllowed)
+	}
 }
 
 func (h *usersHandler) Price(w http.ResponseWriter, r *http.Request) {
