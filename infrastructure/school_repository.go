@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"main/domain"
 )
@@ -12,7 +13,7 @@ import (
 type SchoolRepository interface{
 
 	GetSchools(ctx context.Context) ([] *domain.School, error)
-	AddSchool(ctx context.Context, name string)(primitive.ObjectID, error)
+	AddSchool(ctx context.Context, name string)(*domain.School, error)
 	GetSchoolByID(ctx context.Context, id primitive.ObjectID) (*domain.School, error)
 	GetSchoolByName(ctx context.Context, name string) (*domain.School, error)
 }
@@ -77,7 +78,7 @@ func (sr *schoolRepository) GetSchoolByID(ctx context.Context, id primitive.Obje
 	filter := bson.D{{"_id", id}}
 	var school domain.School
 
-	err = collection.FindOne(ctx, filter).Decode(school)
+	err = collection.FindOne(ctx, filter).Decode(&school)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -98,8 +99,10 @@ func (sr *schoolRepository) AddSchool(ctx context.Context, name string) (*domain
 	school, err := sr.GetSchoolByName(ctx, name)
 
 	if err != nil {
-		fmt.Println(err)
-		return nil, err
+		if err != mongo.ErrNoDocuments{
+			fmt.Println(err)
+			return nil, err
+		}
 	}
 
 	if school == nil {
@@ -124,7 +127,7 @@ func (sr *schoolRepository) AddSchool(ctx context.Context, name string) (*domain
 		fmt.Println(res)
 		return newschool, nil
 	}
-	return nil, err
+	return school, err
 }
 
 func (sr *schoolRepository) GetSchoolByName(ctx context.Context, name string) (*domain.School, error){
@@ -137,7 +140,7 @@ func (sr *schoolRepository) GetSchoolByName(ctx context.Context, name string) (*
 	collection := database.Collection(SchoolsCollectionName)
 	filter := bson.D{{"name", name}}
 	var school domain.School
-	err = collection.FindOne(ctx, filter).Decode(school)
+	err = collection.FindOne(ctx, filter).Decode(&school)
 
 	if err != nil {
 		fmt.Println(err)

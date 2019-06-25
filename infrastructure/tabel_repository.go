@@ -11,10 +11,15 @@ import (
 type TabelRepository interface {
 	GetChildTabel(ctx context.Context, childID primitive.ObjectID, dateFrom int64, dateTo int64) ([]*domain.TabelRecord, error)
 	//getTabelWithPrices(ctx context.Context, childID primitive.ObjectID, dateFrom int64, dateTo int64)
-	AddDay(ctx context.Context, date int64, childID primitive.ObjectID, status bool) (primitive.ObjectID, error)
+	SetDayValue(ctx context.Context, date int64, childID string, status bool) (*domain.TabelRecord, error)
+	GetDayValue(ctx context.Context, date int64, childID string) (*domain.TabelRecord, error)
 }
 
 type tabelRepository struct{}
+
+
+
+
 func NewTabelRepository() TabelRepository {
 	return &tabelRepository{}
 }
@@ -87,34 +92,68 @@ func (tr *tabelRepository) GetChildTabel(ctx context.Context, childID primitive.
 //self.cur.execute(r"INSERT into mydb.tabel VALUES (NULL, date(%s), %s, %s)", (date, status, child_id,))
 //self.conn.commit()
 
-func (tr *tabelRepository) AddDay(ctx context.Context, date int64, childID primitive.ObjectID, status bool) (primitive.ObjectID, error) {
+func (tr *tabelRepository) SetDayValue(ctx context.Context, date int64, childID string, status bool) (*domain.TabelRecord, error) {
 
-	var emptyVal primitive.ObjectID
 	database, err := InitDb(ctx)
 	if err != nil {
-		return emptyVal, err
+		return nil, err
 	}
 
 	collection := database.Collection(TabelCollectionName)
 
-	tabelRecord := domain.NewTabelRecord()
-	tabelRecord.ID = primitive.NewObjectID()
-	tabelRecord.Date = date
-	tabelRecord.ChildID = childID
-	tabelRecord.Value = status
+	tabelRecord, err := tr.GetDayValue(ctx, date, childID)
 
-	insertResult, err := collection.InsertOne(ctx, tabelRecord)
-	if err != nil {
-		return emptyVal, err
+	if err == nil && tabelRecord != nil {
+
+		filter := bson.D{{"_id", tabelRecord.ID}}
+		update := bson.D{
+			{"$set", bson.D{
+				{"value", status},
+			}},
+		}
+		_, err = collection.UpdateOne(ctx, filter, update)
+
+	}else {
+		tabelRecord = domain.NewTabelRecord()
+		tabelRecord.ID = primitive.NewObjectID()
+		tabelRecord.Date = date
+		tabelRecord.ChildID, _ = primitive.ObjectIDFromHex(childID)
+		tabelRecord.Value = status
+
+		insertResult, err := collection.InsertOne(ctx, tabelRecord)
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Println("Inserted a single document: ", insertResult.InsertedID)
+
+		err = database.Client().Disconnect(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
+	return tabelRecord, nil
+}
 
-	fmt.Println("Inserted a single document: ", insertResult.InsertedID)
+func (tr *tabelRepository) GetDayValue(ctx context.Context, date int64, childID string) (*domain.TabelRecord, error) {
+
+	var tabelRecord domain.TabelRecord
+	database, err := InitDb(ctx)
+	if err != nil {
+		return nil, err
+	}
+	collection := database.Collection(TabelCollectionName)
+
+	filter :=  bson.D{{"childID", childID},{"Date",date}}
+
+	err = collection.FindOne(ctx, filter).Decode(&tabelRecord)
+	if err != nil {
+		return nil, err
+	}
 
 	err = database.Client().Disconnect(ctx)
 	if err != nil {
-		return emptyVal, err
+		return nil, err
 	}
-
-	return insertResult.InsertedID.(primitive.ObjectID), nil
-
+	return &tabelRecord, nil
 }

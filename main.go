@@ -51,12 +51,16 @@ func main() {
 
 
 	usersRepository := infrastructure.NewUsersRepository()
+	schoolsRepository := infrastructure.NewSchoolRepository()
+	groupsRepository := infrastructure.NewGroupRepository()
+	childRepository := infrastructure.NewChildrenRepository()
+	tabelRepository := infrastructure.NewTabelRepository()
 	//
 	//authGuard := core.NewAuthGuard(usersRepository)
 	//
 	//authMiddleware := middleware.NewAuthMiddleware(authGuard)
 	//
-	usersHandler := handlers.NewUsersHandler(usersRepository)
+	usersHandler := handlers.NewUsersHandler(usersRepository, schoolsRepository, groupsRepository, childRepository, tabelRepository)
 	//adminsHandler := handlers.NewAdminsHandler(usersRepository)
 
 	//server := server.NewServer(":8080", usersHandler, adminsHandler, authMiddleware)

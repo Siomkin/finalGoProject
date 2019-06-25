@@ -26,20 +26,16 @@ func NewServer(port string, usersHandler handlers.UsersHandler) *Server {
 func (server *Server) ConfigureAndRun() {
 
 	adminMux := http.NewServeMux()
-	adminMux.HandleFunc("/admin/users/", server.handlers.GetUsersList)
+	adminMux.HandleFunc("/admin/users", server.handlers.GetUsersList)
 	adminMux.HandleFunc("/admin/schools/", server.handlers.Schools)
 	adminMux.HandleFunc("/admin/groups/", server.handlers.Groups)
-	adminMux.HandleFunc("/admin/price/", server.handlers.Price)
+	//adminMux.HandleFunc("/admin/price/", server.handlers.Price)	 //prices will be in the next version
 
 	//adminHandler := server.authMiddleware.CheckRole(adminMux)
 	//adminHandler = server.authMiddleware.CheckAuth(adminHandler)
 
 	userMux := http.NewServeMux()
-	//userMux.HandleFunc("/", server.handlers.GetUser)
-	userMux.HandleFunc("/user/", server.handlers.GetUser)
-	//userMux.HandleFunc("/user/{name}/{child}/", server.handlers.GetUserChild)
-	userMux.HandleFunc("/user/children/", server.handlers.GetUserChild)
-
+	userMux.HandleFunc("/user/", server.handlers.MainUserHandler)
 
 	//userHandler := server.authMiddleware.CheckAuth(userMux)
 
@@ -66,7 +62,22 @@ func (server *Server) ConfigureAndRun() {
 //		 price		  get, post
 //
 // user/{name}			get
-//		 users			get
-//		 tabel			get, post
-//		 children		get, post
-//		 children/name	get
+
+//
+// child			get, post (getting list, posting new child)
+// child/{name}		get
+
+// tabel			get	 (getting list by dates), post ( post by date)
+// tabel/date		get (get by specified date)
+
+
+/////////////
+//childMux := http.NewServeMux()
+//childMux.HandleFunc("/child", server.handlers.MainChildHandler)		//req like /child
+//childMux.HandleFunc("/child/", server.handlers.GetUserChild)		//req like /child/{name}
+//
+//tabelMux := http.NewServeMux()
+//tabelMux.HandleFunc("/tabel", server.handlers.MainTabelHandler)		//req like /tabel
+//tabelMux.HandleFunc("/tabel/", server.handlers.GetTabelOnDate) 		//req like /tabel/{date}
+
+

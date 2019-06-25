@@ -24,6 +24,7 @@ type UsersRepository interface{
 	CreateUser(ctx context.Context, login string, pass string) (*domain.User, error)
 	GetUserList(ctx context.Context) ([]*domain.User, error)
 	GetUserByID(ctx context.Context, ID string) (*domain.User, error)
+	SetUserRoleByID(ctx context.Context, ID string, NewRole domain.UserRole) error
 }
 
 type usersRepository struct{}
@@ -153,7 +154,7 @@ func (u *usersRepository) GetUserByID(ctx context.Context, ID string) (*domain.U
 	}
 
 	collection := database.Collection(UsersCollectionName)
-	filter := bson.D{{"_id", primitive.ObjectIDFromHex(ID)}}
+	filter := bson.D{{"_id", ID}}
 
 	err = collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
@@ -168,3 +169,22 @@ func (u *usersRepository) GetUserByID(ctx context.Context, ID string) (*domain.U
 
 	return &result, nil
 }
+
+func (u *usersRepository) SetUserRoleByID(ctx context.Context, ID string, NewRole domain.UserRole) error {
+	database, err := InitDb(ctx)
+	if err != nil {
+		return err
+	}
+	collection := database.Collection(UsersCollectionName)
+	id, err := primitive.ObjectIDFromHex(ID)
+	filter := bson.D{{"_id", id}}
+	update := bson.D{{"$set", bson.D{
+				{"role", NewRole},
+		}},
+	}
+	_, err = collection.UpdateOne(ctx, filter, update)
+
+	return err
+}
+
+

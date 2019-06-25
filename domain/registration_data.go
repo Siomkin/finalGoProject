@@ -9,3 +9,8 @@ type CreateGroupData struct {
 	Name    string `json:"name"`
 	SchoolID string `json:"schoolcode"`
 }
+
+type CreateChildData struct {
+	Name    string `json:"name"`
+	GroupID string `json:"groupid"`
+}
