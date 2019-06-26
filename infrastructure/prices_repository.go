@@ -22,10 +22,13 @@ func NewPricesRepository() PricesRepository{
 
 func (pr * pricesRepository) GetPrice(ctx context.Context, date int64, groupId primitive.ObjectID) (*domain.Prices, error) {
 
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(PricesCollectionName)
 
@@ -37,21 +40,19 @@ func (pr * pricesRepository) GetPrice(ctx context.Context, date int64, groupId p
 		return nil, err
 	}
 
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		fmt.Println(err)
-		return &result, err
-	}
 	return &result, nil
 }
 
 //adds or changing price on the date and group
 func (pr * pricesRepository) AddPrice(ctx context.Context, date int64, groupId primitive.ObjectID, price float64) {
 
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
-		return // nil, err
+		fmt.Println(err)
+		return
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(PricesCollectionName)
 
@@ -89,19 +90,18 @@ func (pr * pricesRepository) AddPrice(ctx context.Context, date int64, groupId p
 			fmt.Println(updateResult)
 		}
 	}
-	//fmt.Println(collection)
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		fmt.Println(err)
-		return //nil, err
-	}
+
 }
 
 func (pr * pricesRepository) ChangePrice(ctx context.Context, date int64, groupId primitive.ObjectID, price float64){
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
-		return // nil, err
+		fmt.Println(err)
+		return
 	}
+	defer cn.CloseDb(ctx, database)
+
 
 	collection := database.Collection(PricesCollectionName)
 
@@ -121,9 +121,5 @@ func (pr * pricesRepository) ChangePrice(ctx context.Context, date int64, groupI
 			fmt.Println(updateResult)
 		}
 	}
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		fmt.Println(err)
-		return //nil, err
-	}
+
 }

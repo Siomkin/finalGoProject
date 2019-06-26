@@ -9,7 +9,7 @@ import (
 )
 
 type TabelRepository interface {
-	GetChildTabel(ctx context.Context, childID primitive.ObjectID, dateFrom int64, dateTo int64) ([]*domain.TabelRecord, error)
+	GetChildTabel(ctx context.Context, childID string, dateFrom int64, dateTo int64) ([]*domain.TabelRecord, error)
 	//getTabelWithPrices(ctx context.Context, childID primitive.ObjectID, dateFrom int64, dateTo int64)
 	SetDayValue(ctx context.Context, date int64, childID string, status bool) (*domain.TabelRecord, error)
 	GetDayValue(ctx context.Context, date int64, childID string) (*domain.TabelRecord, error)
@@ -29,15 +29,19 @@ func NewTabelRepository() TabelRepository {
 //self.cur.execute(r"SELECT * from mydb.tabel where date BETWEEN date(%s) AND date(%s) and childid = %s order by date", (date_from, date_to, child_id, ))
 //rows = self.cur.fetchall()
 //return rows
-func (tr *tabelRepository) GetChildTabel(ctx context.Context, childID primitive.ObjectID, dateFrom int64, dateTo int64) ([]*domain.TabelRecord, error){
+func (tr *tabelRepository) GetChildTabel(ctx context.Context, childID string, dateFrom int64, dateTo int64) ([]*domain.TabelRecord, error){
 
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	defer cn.CloseDb(ctx, database)
+
 	collection := database.Collection(TabelCollectionName)
-	filter :=  bson.D{{"childID", childID},{"Date",bson.D{{"$gte",dateFrom}, {"$lte",dateTo}}}}
+	_id, _ := primitive.ObjectIDFromHex(childID)
+	filter :=  bson.D{{"childid", _id},{"date",bson.D{{"$gte",dateFrom}, {"$lte",dateTo}}}}
 
 	tabelRecords, err := collection.Find(ctx, filter)
 	if err != nil {
@@ -46,8 +50,9 @@ func (tr *tabelRepository) GetChildTabel(ctx context.Context, childID primitive.
 
 	var TabelRecords []*domain.TabelRecord
 
-	var elem domain.TabelRecord
+
 	for tabelRecords.Next(ctx) {
+		var elem domain.TabelRecord
 		err := tabelRecords.Decode(&elem)
 		if err != nil {
 			fmt.Println(err)
@@ -56,10 +61,6 @@ func (tr *tabelRepository) GetChildTabel(ctx context.Context, childID primitive.
 		TabelRecords = append(TabelRecords, &elem)
 	}
 
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		return nil, err
-	}
 	return TabelRecords, nil
 }
 
@@ -93,11 +94,12 @@ func (tr *tabelRepository) GetChildTabel(ctx context.Context, childID primitive.
 //self.conn.commit()
 
 func (tr *tabelRepository) SetDayValue(ctx context.Context, date int64, childID string, status bool) (*domain.TabelRecord, error) {
-
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(TabelCollectionName)
 
@@ -126,11 +128,6 @@ func (tr *tabelRepository) SetDayValue(ctx context.Context, date int64, childID 
 		}
 
 		fmt.Println("Inserted a single document: ", insertResult.InsertedID)
-
-		err = database.Client().Disconnect(ctx)
-		if err != nil {
-			return nil, err
-		}
 	}
 	return tabelRecord, nil
 }
@@ -138,22 +135,22 @@ func (tr *tabelRepository) SetDayValue(ctx context.Context, date int64, childID 
 func (tr *tabelRepository) GetDayValue(ctx context.Context, date int64, childID string) (*domain.TabelRecord, error) {
 
 	var tabelRecord domain.TabelRecord
-	database, err := InitDb(ctx)
+
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
 		return nil, err
 	}
-	collection := database.Collection(TabelCollectionName)
+	defer cn.CloseDb(ctx, database)
 
-	filter :=  bson.D{{"childID", childID},{"Date",date}}
+	collection := database.Collection(TabelCollectionName)
+	_id, _ := primitive.ObjectIDFromHex(childID)
+	filter :=  bson.D{{"childid", _id},{"date",date}}
 
 	err = collection.FindOne(ctx, filter).Decode(&tabelRecord)
 	if err != nil {
 		return nil, err
 	}
 
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		return nil, err
-	}
 	return &tabelRecord, nil
 }

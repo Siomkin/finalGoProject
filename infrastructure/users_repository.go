@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"main/domain"
 	"strings"
@@ -53,10 +54,13 @@ func (u *usersRepository) UserLogin(ctx context.Context, login string, pass stri
 
 func (u *usersRepository) GetUserList(ctx context.Context) ([]*domain.User, error) {
 
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(UsersCollectionName)
 	filter := bson.D{}
@@ -76,22 +80,19 @@ func (u *usersRepository) GetUserList(ctx context.Context) ([]*domain.User, erro
 		users = append(users, &elem)
 	}
 
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-
-		fmt.Println(err)
-		return users, err
-	}
 	return users, nil
 }
 
 func (u *usersRepository) GetUserByLogin(ctx context.Context, login string) (*domain.User, error){
 	var result domain.User
 
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(UsersCollectionName)
 	filter := bson.D{{"name", login}}
@@ -100,12 +101,6 @@ func (u *usersRepository) GetUserByLogin(ctx context.Context, login string) (*do
 	if err != nil {
 		return nil, err
 	}
-
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("Connection to MongoDB closed.")
 
 	return &result, nil
 }
@@ -116,10 +111,13 @@ func (u *usersRepository) CreateUser(ctx context.Context, login string, pass str
 		return nil, errors.New("Empty login!")
 	}
 
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	h := md5.New()
 	collection := database.Collection(UsersCollectionName)
@@ -136,11 +134,6 @@ func (u *usersRepository) CreateUser(ctx context.Context, login string, pass str
 
 	fmt.Println("Inserted a single document: ", insertResult.InsertedID)
 
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	return userForInsert, nil
 }
 
@@ -148,33 +141,41 @@ func (u *usersRepository) CreateUser(ctx context.Context, login string, pass str
 func (u *usersRepository) GetUserByID(ctx context.Context, ID string) (*domain.User, error) {
 	var result domain.User
 
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(UsersCollectionName)
-	filter := bson.D{{"_id", ID}}
+	_id, _ := primitive.ObjectIDFromHex(ID)
+	filter := bson.D{{"_id", _id}}
 
 	err = collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
-		return nil, err
-	}
+		if err != mongo.ErrNoDocuments{
+			fmt.Println(err)
+			return nil, err
+		} else{
+			return nil, nil
+		}
 
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		return nil, err
 	}
-	fmt.Println("Connection to MongoDB closed.")
 
 	return &result, nil
 }
 
 func (u *usersRepository) SetUserRoleByID(ctx context.Context, ID string, NewRole domain.UserRole) error {
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
+	defer cn.CloseDb(ctx, database)
+
 	collection := database.Collection(UsersCollectionName)
 	id, err := primitive.ObjectIDFromHex(ID)
 	filter := bson.D{{"_id", id}}

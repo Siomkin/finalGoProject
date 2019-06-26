@@ -7,7 +7,7 @@ type RegistrationData struct {
 
 type CreateGroupData struct {
 	Name    string `json:"name"`
-	SchoolID string `json:"schoolcode"`
+	SchoolID string `json:"schoolid"`
 }
 
 type CreateChildData struct {

@@ -187,7 +187,13 @@ func (h *usersHandler) MainUserHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			mUser, err := json.Marshal(user)
+			if user == nil{
+				fmt.Println(err)
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+
+			mUser, err := json.Marshal(&user)
 			if err != nil {
 				fmt.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
@@ -196,7 +202,7 @@ func (h *usersHandler) MainUserHandler(w http.ResponseWriter, r *http.Request) {
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, mUser)
+			fmt.Fprintln(w, string(mUser))
 			return
 
 		} else if len(path) == 4 {                //four params - address like /user/{name}/child
@@ -205,6 +211,12 @@ func (h *usersHandler) MainUserHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				fmt.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			if childList == nil{
+				fmt.Println(err)
+				w.WriteHeader(http.StatusNoContent)
 				return
 			}
 
@@ -217,7 +229,7 @@ func (h *usersHandler) MainUserHandler(w http.ResponseWriter, r *http.Request) {
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, mChildList)
+			fmt.Fprintln(w, string(mChildList))
 			return
 
 		} else if len(path) == 5 {				////five params - address like /user/{name}/child/{childname}
@@ -238,7 +250,7 @@ func (h *usersHandler) MainUserHandler(w http.ResponseWriter, r *http.Request) {
 
 			if child != nil{				// if we found a child
 
-				mChild, err := json.Marshal(childList)
+				mChild, err := json.Marshal(child)
 				if err != nil {
 					fmt.Println(err)
 					w.WriteHeader(http.StatusInternalServerError)
@@ -247,14 +259,12 @@ func (h *usersHandler) MainUserHandler(w http.ResponseWriter, r *http.Request) {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				fmt.Fprintln(w, mChild)
+				fmt.Fprintln(w, string(mChild))
 				return
 
 			}else {
-
-				w.WriteHeader(http.StatusBadRequest)
+				w.WriteHeader(http.StatusNoContent)
 				return
-
 			}
 
 		}else if len(path) == 6 { 				////six params - address like /user/{name}/child/{childname}/tabel
@@ -267,6 +277,12 @@ func (h *usersHandler) MainUserHandler(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+
+			if child == nil {			//if we cannot find child
+				fmt.Println(err)
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
 			//default dates:
 			t := time.Now()
 			currentYear, currentMonth, _ := t.Date()
@@ -274,7 +290,7 @@ func (h *usersHandler) MainUserHandler(w http.ResponseWriter, r *http.Request) {
 			datefrom := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
 			dateto := datefrom.AddDate(0, 1, -1)
 
-			tabel, err := h.tabelRepository.GetChildTabel(context.Background(), child.ID, datefrom.Unix(), dateto.Unix())
+			tabel, err := h.tabelRepository.GetChildTabel(context.Background(), child.ID.Hex(), datefrom.Unix(), dateto.Unix())
 			if err != nil {
 				fmt.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
@@ -288,7 +304,7 @@ func (h *usersHandler) MainUserHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, mTabel)
+			fmt.Fprintln(w, string(mTabel))
 			return
 		}
 	} else if r.Method == http.MethodPost {
@@ -319,7 +335,7 @@ func (h *usersHandler) MainUserHandler(w http.ResponseWriter, r *http.Request) {
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, mch)
+			fmt.Fprintln(w, string(mch))
 			return
 
 		} else if len(path) == 7 { ////six params - address like /user/{name}/child/{childname}/tabel/{date}
@@ -364,7 +380,7 @@ func (h *usersHandler) MainUserHandler(w http.ResponseWriter, r *http.Request) {
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, mtr)
+			fmt.Fprintln(w, string(mtr))
 			return
 
 
@@ -440,7 +456,10 @@ func (h *usersHandler) Groups(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		groups, err := h.groupsRepository.GetGroups(context.Background())
 		if err != nil {
-			http.Redirect(w, r, "/", 301)
+			//http.Redirect(w, r, "/", 301)
+			fmt.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
 		res, err := json.Marshal(groups)

@@ -32,11 +32,13 @@ func NewSchoolRepository() SchoolRepository {
 //return rows
 //
 func (sr *schoolRepository) GetSchools(ctx context.Context) ([]*domain.School, error){
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(SchoolsCollectionName)
 
@@ -58,21 +60,17 @@ func (sr *schoolRepository) GetSchools(ctx context.Context) ([]*domain.School, e
 		schools = append(schools, &elem)
 	}
 
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-
-		fmt.Println(err)
-		return schools, err
-	}
 	return schools, nil
 }
 
 func (sr *schoolRepository) GetSchoolByID(ctx context.Context, id primitive.ObjectID) (*domain.School, error){
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(SchoolsCollectionName)
 	filter := bson.D{{"_id", id}}
@@ -82,12 +80,6 @@ func (sr *schoolRepository) GetSchoolByID(ctx context.Context, id primitive.Obje
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
-	}
-
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		fmt.Println(err)
-		return &school, err
 	}
 
 	return &school, nil
@@ -107,11 +99,13 @@ func (sr *schoolRepository) AddSchool(ctx context.Context, name string) (*domain
 
 	if school == nil {
 
-		database, err := InitDb(ctx)
+		cn := NewConnection()
+		database, err := cn.InitDb(ctx)
 		if err != nil {
 			fmt.Println(err)
 			return nil, err
 		}
+		defer cn.CloseDb(ctx, database)
 
 		collection := database.Collection(SchoolsCollectionName)
 
@@ -131,11 +125,14 @@ func (sr *schoolRepository) AddSchool(ctx context.Context, name string) (*domain
 }
 
 func (sr *schoolRepository) GetSchoolByName(ctx context.Context, name string) (*domain.School, error){
-	database, err := InitDb(ctx)
+
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(SchoolsCollectionName)
 	filter := bson.D{{"name", name}}
@@ -145,12 +142,6 @@ func (sr *schoolRepository) GetSchoolByName(ctx context.Context, name string) (*
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
-	}
-
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		fmt.Println(err)
-		return &school, err
 	}
 
 	return &school, nil

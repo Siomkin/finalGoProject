@@ -7,7 +7,7 @@ import (
 type TabelRecord struct{
 	ID primitive.ObjectID `bson:"_id,omitempty"`
 	Date int64
-	Value bool
+	Value bool	`json:"value"`
 	ChildID primitive.ObjectID
 }
 

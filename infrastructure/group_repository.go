@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"main/domain"
 )
@@ -25,10 +26,13 @@ func NewGroupRepository() GroupRepository{
 }
 
 func (gr *groupRepository) GetGroupByName(ctx context.Context, groupName string) (*domain.Group, error) {
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(GroupCollectionName)
 	fmt.Println(collection)
@@ -46,10 +50,13 @@ func (gr *groupRepository) GetGroupByName(ctx context.Context, groupName string)
 }
 
 func (gr *groupRepository) AddGroup(ctx context.Context, groupName string, SchoolID string)  (*domain.Group, error){
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(GroupCollectionName)
 
@@ -57,8 +64,10 @@ func (gr *groupRepository) AddGroup(ctx context.Context, groupName string, Schoo
 
 	result, err = gr.GetGroupByName(ctx, groupName)
 	if err != nil {
-		fmt.Println(err)
-		return nil, err
+		if err != mongo.ErrNoDocuments{
+			fmt.Println(err)
+			return nil, err
+		}
 	}
 	if result == nil {
 
@@ -78,11 +87,13 @@ func (gr *groupRepository) AddGroup(ctx context.Context, groupName string, Schoo
 }
 
 func (gr *groupRepository) GetGroups(ctx context.Context) ([] *domain.Group, error) {
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(GroupCollectionName)
 
@@ -104,11 +115,5 @@ func (gr *groupRepository) GetGroups(ctx context.Context) ([] *domain.Group, err
 		groups = append(groups, &elem)
 	}
 
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-
-		fmt.Println(err)
-		return groups, err
-	}
 	return groups, nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"main/domain"
 )
 
@@ -25,24 +26,24 @@ func NewChildrenRepository() ChildrenRepository{
 }
 
 func (cr *childrenRepository) GetChildrenByNameAndUserID(ctx context.Context, childName string, userID string) (*domain.Children, error) {
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
+
 	collection := database.Collection(ChildrenCollectionName)
 
 	var result domain.Children
-	filter := bson.D{{"name", childName}, {"userid", userID}}
+	_id, _ := primitive.ObjectIDFromHex(userID)
+	filter := bson.D{{"name", childName}, {"userid", _id}}
 	err = collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
 		return nil, err
 	}
 
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		fmt.Println(err)
-		return &result, err
-	}
 	return &result, nil
 }
 
@@ -51,10 +52,13 @@ func (cr *childrenRepository) GetChildrenByNameAndUserID(ctx context.Context, ch
 //rows = self.cur.fetchall()
 //return rows
 func (cr *childrenRepository) GetChildrenById(ctx context.Context, childID string) (*domain.Children, error){
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(ChildrenCollectionName)
 
@@ -65,29 +69,33 @@ func (cr *childrenRepository) GetChildrenById(ctx context.Context, childID strin
 		return nil, err
 	}
 
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		fmt.Println(err)
-		return &result, err
-	}
 	return &result, nil
 }
 
 
 func (cr *childrenRepository) GetChildrenByUserID(ctx context.Context, userID string) ([] *domain.Children, error) {
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(ChildrenCollectionName)
 
 	var children [] *domain.Children
-	filter := bson.D{{"userid", userID}}
+	_id, _ := primitive.ObjectIDFromHex(userID)
+	filter := bson.D{{"userid", _id}}
 
 	result, err := collection.Find(ctx, filter)
 	if err != nil {
-		return nil, err
+		if err != mongo.ErrNoDocuments{
+			fmt.Println(err)
+			return nil, err
+		} else {
+			return nil, nil
+		}
 	}
 
 	for result.Next(ctx) {
@@ -100,11 +108,6 @@ func (cr *childrenRepository) GetChildrenByUserID(ctx context.Context, userID st
 		children = append(children, &elem)
 	}
 
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		fmt.Println(err)
-		return children, err
-	}
 	return children, nil
 }
 
@@ -114,29 +117,36 @@ func (cr *childrenRepository) GetChildrenByUserID(ctx context.Context, userID st
 //self.conn.commit()
 func (cr *childrenRepository) AddChild(ctx context.Context, userID string, groupID string, childName string) (*domain.Children, error){
 	//var emptyVal primitive.ObjectID
-	database, err := InitDb(ctx)
+	cn := NewConnection()
+	database, err := cn.InitDb(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	defer cn.CloseDb(ctx, database)
 
 	collection := database.Collection(ChildrenCollectionName)
 
-	child := domain.NewChildren()
-	child.ID = primitive.NewObjectID()
-	child.UserID, _ = primitive.ObjectIDFromHex(userID)
-	child.GroupID, _ = primitive.ObjectIDFromHex(groupID)
-	child.Name = childName
+	child, err := cr.GetChildrenByNameAndUserID(ctx, childName, userID)
 
-	insertResult, err := collection.InsertOne(ctx, child)
-	if err != nil {
-		return nil, err
+	if err != nil{
+		if err != mongo.ErrNoDocuments{
+			fmt.Println(err)
+			return nil, err
+		}
 	}
+	if child == nil {
+		child := domain.NewChildren()
+		child.ID = primitive.NewObjectID()
+		child.UserID, _ = primitive.ObjectIDFromHex(userID)
+		child.GroupID, _ = primitive.ObjectIDFromHex(groupID)
+		child.Name = childName
 
-	fmt.Println("Inserted a single document: ", insertResult.InsertedID)
-
-	err = database.Client().Disconnect(ctx)
-	if err != nil {
-		return nil, err
+		insertResult, err := collection.InsertOne(ctx, child)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println(insertResult)
 	}
 
 	return child, nil
